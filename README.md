@@ -1,6 +1,8 @@
-# DevOps AI — Observability Agent
+# Observability Agent
 
 > Observability stack for the **DevOps AI** platform.
+>
+> Author: nitinprajwal — https://github.com/nitinprajwal
 > Bundles an OTel Collector, a React SPA dashboard, Grafana, Loki, Tempo, and Prometheus into a single Docker image served over nginx on port **8085**.
 
 ---
@@ -20,6 +22,8 @@ Grafana (:3001 / :8085/api/grafana/)
     reads: Prometheus + Loki + Tempo
     SSO:   nginx auth_request → DevopsAI /api/auth/check → X-User-Email → auto-login
 ```
+
+![alt text](blob/image/obs_application.gif)
 
 ### Dashboard tabs
 
@@ -59,6 +63,22 @@ make obs   # starts 5 containers — OTel Collector, Prometheus, Loki, Tempo, Gr
 All service configs (OTel Collector, Prometheus, Loki, Tempo, Grafana) are inline `configs:` blocks in `docker-compose.yml` — no external config files are required.
 
 ---
+![alt text](blob/image/image.png)
+![alt text](blob/image/image-1.png)
+![alt text](blob/image/image-2.png)
+![alt text](blob/image/image-3.png)
+![alt text](blob/image/image-4.png)
+![alt text](blob/image/image-5.png)
+![alt text](blob/image/image-6.png)
+![alt text](blob/image/image-7.png)
+![alt text](blob/image/image-8.png)
+![alt text](blob/image/image-9.png)
+![alt text](blob/image/image-10.png)
+![alt text](blob/image/image-11.png)
+![alt text](blob/image/image-12.png)
+![alt text](blob/image/image-13.png)
+![alt text](blob/image/image-14.png)
+![alt text](blob/image/image-15.jpeg)
 
 ## Building & pushing the Docker image
 
@@ -161,3 +181,4 @@ npm run build # production build → dist/
 ```
 
 The built `dist/` is served by nginx inside the Docker image.
+
