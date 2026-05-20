@@ -1,0 +1,182 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# OpenTelemetry Collector Configuration — DevOps AI Observability Agent
+# Receives OTLP from devopsai-app (Next.js) + devopsai-agent (Python/LangGraph)
+# Exports:
+#   traces  → Tempo (gRPC) + Jaeger (gRPC dual-export)
+#   metrics → Prometheus (pull :8889) + process/host metrics
+#   logs    → Loki (OTLP HTTP)
+#
+# Key decisions:
+#  - NO namespace: prefix in prometheus exporter — avoids double-prefixing
+#  - transform/logs copies severity_text → attributes["level"] for Loki indexing
+#  - resource processor ensures service.namespace="devopsai" on every signal
+#  - hostmetrics receiver collects CPU/memory of the collector process
+#  - Jaeger dual-export: traces go to both Tempo and Jaeger simultaneously
+# ─────────────────────────────────────────────────────────────────────────────
+
+receivers:
+  # ── OTLP from devopsai-app + devopsai-agent ───────────────────────────────
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - "http://*"
+            - "https://*"
+
+  # ── Host/process metrics — CPU, memory, disk, network ────────────────────
+  # Runs inside the collector container; reports the collector's own process
+  # resource usage. The devopsai-agent and devopsai-app processes export their
+  # own OTel process metrics via OTLP; this captures the infrastructure layer.
+  hostmetrics:
+    collection_interval: 15s
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      memory:
+        metrics:
+          system.memory.utilization:
+            enabled: true
+      load: {}
+      disk: {}
+      filesystem:
+        metrics:
+          system.filesystem.utilization:
+            enabled: true
+      network: {}
+      process:
+        mute_process_name_error: true
+        mute_process_exe_error: true
+        mute_process_io_error: true
+        mute_process_user_error: true
+        metrics:
+          process.cpu.utilization:
+            enabled: true
+          process.memory.utilization:
+            enabled: true
+
+processors:
+  memory_limiter:
+    limit_mib: 512
+    spike_limit_mib: 128
+    check_interval: 1s
+
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+
+  # Upsert common resource attributes so they appear as Loki labels + Prometheus labels
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: "${env:DEPLOYMENT_ENV}"
+        action: upsert
+      - key: service.namespace
+        value: "devopsai"
+        action: upsert
+
+  # ── Log enrichment ───────────────────────────────────────────────────────
+  transform/logs:
+    error_mode: ignore
+    log_statements:
+      - context: log
+        statements:
+          - set(attributes["level"], ConvertCase(attributes["level"], "lower")) where attributes["level"] != nil
+          - set(attributes["level"], ConvertCase(severity_text, "lower")) where severity_text != nil and attributes["level"] == nil
+          - set(attributes["trace_id"], Concat([trace_id], "")) where trace_id != nil
+
+  # ── Resource filter for host metrics: add service labels ────────────────
+  resourcedetection:
+    detectors: [env, system]
+    timeout: 5s
+    override: false
+
+exporters:
+  # ── Traces → Tempo (gRPC) ────────────────────────────────────────────────
+  otlp/tempo:
+    endpoint: "${env:TEMPO_ENDPOINT}"
+    tls:
+      insecure: true
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_elapsed_time: 300s
+
+  # ── Traces → Jaeger (gRPC OTLP) ─────────────────────────────────────────
+  # Jaeger All-in-One accepts OTLP on port 4317 when COLLECTOR_OTLP_ENABLED=true
+  # JAEGER_ENDPOINT should be "observability-jaeger:4317" (gRPC, no http:// prefix)
+  otlp/jaeger:
+    endpoint: "${env:JAEGER_ENDPOINT}"
+    tls:
+      insecure: true
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_elapsed_time: 120s
+
+  # ── Metrics → Prometheus pull ────────────────────────────────────────────
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    send_timestamps: true
+    metric_expiration: 5m
+    resource_to_telemetry_conversion:
+      enabled: true
+
+  # ── Logs → Loki (OTLP HTTP) ─────────────────────────────────────────────
+  otlphttp/loki:
+    endpoint: "${env:LOKI_ENDPOINT}"
+    tls:
+      insecure: true
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_elapsed_time: 300s
+    sending_queue:
+      enabled: true
+      num_consumers: 4
+      queue_size: 1000
+
+  # ── Debug (basic verbosity — disable in prod if noisy) ───────────────────
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  pprof:
+    endpoint: 0.0.0.0:1777
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+service:
+  extensions: [health_check, pprof, zpages]
+
+  pipelines:
+    # Dual-export traces to Tempo (Grafana) AND Jaeger simultaneously
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp/tempo, otlp/jaeger]
+
+    # App/agent metrics via OTLP push + host metrics via pull
+    metrics:
+      receivers: [otlp, hostmetrics]
+      processors: [memory_limiter, resource, batch]
+      exporters: [prometheus]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, transform/logs, batch]
+      exporters: [otlphttp/loki]
+
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      address: 0.0.0.0:8888

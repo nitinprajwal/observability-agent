@@ -1,0 +1,208 @@
+{
+  "Security Scanner": {
+    "port": 8001,
+    "endpoint": "http://localhost:8001",
+    "agent_card": {
+      "capabilities": {},
+      "defaultInputModes": [
+        "text"
+      ],
+      "defaultOutputModes": [
+        "text"
+      ],
+      "description": "A2A-based security vulnerability scanner
+        using Bandit, Semgrep and pattern matching",
+      "name": "Security Scanner",
+      "preferredTransport": "JSONRPC",
+      "protocolVersion": "1.0",
+      "skills": [
+        {
+          "description": "Scan code for security vulnerabilities",
+          "id": "security_scanner_14e075fa_vulnerability_scan",
+          "name": "vulnerability_scan",
+          "tags": [
+            "analysis",
+            "security",
+            "multi-agent"
+          ]
+        },
+        {
+          "description": "Generate comprehensive security report",
+          "id": "security_scanner_14e075fa_security_report",
+          "name": "security_report",
+          "tags": [
+            "analysis",
+            "security",
+            "multi-agent"
+          ]
+        }
+      ],
+      "url": "http://localhost:8001",
+      "version": "1.0.0"
+    }
+  },
+  "Code Reviewer Agent": {
+    "port": 8002,
+    "endpoint": "http://localhost:8002",
+    "agent_card": {
+      "capabilities": {},
+      "defaultInputModes": [
+        "text"
+      ],
+      "defaultOutputModes": [
+        "text"
+      ],
+      "description": "A2A-based code quality analyzer with AI-powered insights and MCP tools",
+      "name": "Code Reviewer Agent",
+      "preferredTransport": "JSONRPC",
+      "protocolVersion": "1.0",
+      "skills": [
+        {
+          "description": "Perform comprehensive code quality analysis with AI insights",
+          "id": "code_reviewer_agent_f1e232e1_code_quality_review",
+          "name": "code_quality_review",
+          "tags": [
+            "analysis",
+            "security",
+            "multi-agent"
+          ]
+        },
+        {
+          "description": "Analyze code complexity using MCP tools",
+          "id": "code_reviewer_agent_f1e232e1_complexity_analysis",
+          "name": "complexity_analysis",
+          "tags": [
+            "analysis",
+            "security",
+            "multi-agent"
+          ]
+        }
+      ],
+      "url": "http://localhost:8002",
+      "version": "1.0.0"
+    }
+  },
+  "Documentation Agent": {
+    "port": 8003,
+    "endpoint": "http://localhost:8003",
+    "agent_card": {
+      "capabilities": {},
+      "defaultInputModes": [
+        "text"
+      ],
+      "defaultOutputModes": [
+        "text"
+      ],
+      "description": "A2A-based documentation analyzer for coverage and quality assessment",
+      "name": "Documentation Agent",
+      "preferredTransport": "JSONRPC",
+      "protocolVersion": "1.0",
+      "skills": [
+        {
+          "description": "Analyze documentation coverage and quality in Python code",
+          "id": "documentation_agent_9a0f42ca_documentation_analysis",
+          "name": "documentation_analysis",
+          "tags": [
+            "analysis",
+            "security",
+            "multi-agent"
+          ]
+        },
+        {
+          "description": "Generate missing documentation templates",
+          "id": "documentation_agent_9a0f42ca_generate_documentation",
+          "name": "generate_documentation",
+          "tags": [
+            "analysis",
+            "security",
+            "multi-agent"
+          ]
+        }
+      ],
+      "url": "http://localhost:8003",
+      "version": "1.0.0"
+    }
+  },
+  "Dev Lead Agent": {
+    "port": 8005,
+    "endpoint": "http://localhost:8005",
+    "agent_card": {
+      "capabilities": {},
+      "defaultInputModes": [
+        "text"
+      ],
+      "defaultOutputModes": [
+        "text"
+      ],
+      "description": "A2A-based development workflow orchestrator and team coordinator",
+      "name": "Dev Lead Agent",
+      "preferredTransport": "JSONRPC",
+      "protocolVersion": "1.0",
+      "skills": [
+        {
+          "description": "Create and manage development tasks with A2A coordination",
+          "id": "dev_lead_agent_b5836ad1_create_development_task",
+          "name": "create_development_task",
+          "tags": [
+            "analysis",
+            "security",
+            "multi-agent"
+          ]
+        },
+        {
+          "description": "Orchestrate complete development workflow with multiple A2A agents",
+          "id": "dev_lead_agent_b5836ad1_orchestrate_development_workflow",
+          "name": "orchestrate_development_workflow",
+          "tags": [
+            "analysis",
+            "security",
+            "multi-agent"
+          ]
+        }
+      ],
+      "url": "http://localhost:8005",
+      "version": "1.0.0"
+    }
+  },
+  "Developer Agent": {
+    "port": 8006,
+    "endpoint": "http://localhost:8006",
+    "agent_card": {
+      "capabilities": {},
+      "defaultInputModes": [
+        "text"
+      ],
+      "defaultOutputModes": [
+        "text"
+      ],
+      "description": "A2A-based AI-powered Python code generator using GPT-4o-mini",
+      "name": "Developer Agent",
+      "preferredTransport": "JSONRPC",
+      "protocolVersion": "1.0",
+      "skills": [
+        {
+          "description": "Generate Python code from specifications using AI",
+          "id": "developer_agent_87921521_generate_code",
+          "name": "generate_code",
+          "tags": [
+            "analysis",
+            "security",
+            "multi-agent"
+          ]
+        },
+        {
+          "description": "Refactor and improve existing Python code",
+          "id": "developer_agent_87921521_refactor_code",
+          "name": "refactor_code",
+          "tags": [
+            "analysis",
+            "security",
+            "multi-agent"
+          ]
+        }
+      ],
+      "url": "http://localhost:8006",
+      "version": "1.0.0"
+    }
+  }
+}

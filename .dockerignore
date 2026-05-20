@@ -1,0 +1,11 @@
+node_modules
+**/node_modules
+.git
+*.md
+.env*
+packages/
+a2a-multi-agent-example/
+scripts/
+observability-app/node_modules
+observability-app/.vite
+observability-app/dist
