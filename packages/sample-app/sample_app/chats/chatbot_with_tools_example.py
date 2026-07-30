@@ -10,7 +10,9 @@ This example demonstrates:
 """
 
 import asyncio
+import ast
 import datetime
+import operator
 import uuid
 from typing import Dict
 from dotenv import load_dotenv
@@ -63,10 +65,10 @@ async def get_weather(cw: RunContextWrapper, city: str) -> Dict[str, str]:
     }
 
 
-@function_tool
+@function_tool(needs_approval=True)
 async def calculate(cw: RunContextWrapper, expression: str) -> Dict[str, str]:
     """
-    Calculate a mathematical expression.
+    Calculate a mathematical expression safely.
 
     Args:
         expression: Mathematical expression to evaluate (e.g., "2 + 2", "10 * 5")
@@ -75,17 +77,48 @@ async def calculate(cw: RunContextWrapper, expression: str) -> Dict[str, str]:
         Dictionary with calculation result
     """
     try:
-        # Safe evaluation of basic math expressions
-        # Only allow specific operators
-        allowed_chars = set("0123456789+-*/(). ")
-        if not all(c in allowed_chars for c in expression):
-            return {
-                "expression": expression,
-                "result": "Error: Invalid characters in expression",
-                "success": False
-            }
+        # Safe evaluation using AST validation — no exec/eval/compile
+        OPERATORS = {
+            ast.Add: operator.add,
+            ast.Sub: operator.sub,
+            ast.Mult: operator.mul,
+            ast.Div: operator.truediv,
+            ast.Pow: operator.pow,
+            ast.USub: operator.neg,
+            ast.UAdd: operator.pos,
+        }
 
-        result = eval(expression, {"__builtins__": {}}, {})
+        def _eval_node(node):
+            if isinstance(node, ast.Constant):
+                if isinstance(node.value, (int, float)):
+                    return node.value
+                raise ValueError(f"Unsupported constant: {node.value}")
+            elif isinstance(node, ast.BinOp):
+                op_type = type(node.op)
+                if op_type not in OPERATORS:
+                    raise ValueError(f"Unsupported operator: {op_type.__name__}")
+                left = _eval_node(node.left)
+                right = _eval_node(node.right)
+                if op_type is ast.Div and right == 0:
+                    raise ValueError("Division by zero")
+                return OPERATORS[op_type](left, right)
+            elif isinstance(node, ast.UnaryOp):
+                op_type = type(node.op)
+                if op_type not in OPERATORS:
+                    raise ValueError(f"Unsupported unary operator: {op_type.__name__}")
+                return OPERATORS[op_type](_eval_node(node.operand))
+            elif isinstance(node, ast.Expression):
+                return _eval_node(node.body)
+            else:
+                raise ValueError(f"Unsupported syntax: {type(node).__name__}")
+
+        tree = ast.parse(expression, mode="eval")
+        result = _eval_node(tree.body)
+
+        # Convert result to a reasonable format
+        if isinstance(result, float) and result.is_integer():
+            result = int(result)
+
         return {
             "expression": expression,
             "result": str(result),
